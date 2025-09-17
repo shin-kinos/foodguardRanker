@@ -1,0 +1,20 @@
+
+# System files
+.DS_Store
+
+# RStudio
+.Rproj.user
+*.Rproj
+
+# R
+.Rhistory
+.RData
+.Ruserdata
+.Rapp.history
+
+# Package build results
+*.tar.gz
+.Rcheck/
+
+# GitHub / CI
+.Rbuildignore

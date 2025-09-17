@@ -1,0 +1,29 @@
+Package: foodguardRanker
+Title: foodguardRanker
+Version: 0.1
+Author: Shintaro Kinoshita
+Maintainer: Shintaro Kinoshita <shintaro.kinoshita@e1datascience.co.uk>
+Description: FoodguardRanker carries on grid searching of the best performed ML model for food freshness predictions based on non-invasive sensors.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: R6 (>= 2.6.1),
+    jsonlite (>= 1.9.1),
+    magrittr (>= 2.0.3),
+    plyr (>= 1.8.9),
+    dplyr (>= 1.1.4),
+    digest (>= 0.6.37),
+    mime (>= 0.13),
+    fs (>= 1.6.5),
+    caret (>= 7.0.1),
+    kernlab (>= 0.9.33),
+    rpart (>= 4.1.24),
+    randomForest (>= 4.7.1.2),
+    ada (>= 2.0.5),
+    xgboost (>= 1.7.8.1),
+    naivebayes (>= 1.0.0),
+    nnet (>= 7.3.20),
+    glmnet (>= 4.1.8),
+    RcppEigen (>= 0.3.4.0.2),
+    plumber (>= 1.3.0)
