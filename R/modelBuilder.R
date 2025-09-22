@@ -826,6 +826,7 @@ MlModelBuilder <- R6::R6Class( "MlModelBuilder",
 		# mlRankingInfo     = NULL, # FIXME : Already defiend in super class - will be removed very soon
 		experimentId        = NULL,
 		fullExperimentId    = NULL,
+		analyticalDataIds   = NULL, # New property - this is used for automated prediction
 		outputDir           = NULL,
 		analyticalMetaTypes = NULL,
 		mergedDataset       = NULL,
@@ -864,6 +865,9 @@ MlModelBuilder <- R6::R6Class( "MlModelBuilder",
 
 			# Set result statistics table as empty data frame
 			self$resultStatistics <- data.frame()
+
+			# Set analytical data IDs as empty list
+			self$analyticalDataIds <- list()
 		},
 
 		#'
@@ -876,6 +880,30 @@ MlModelBuilder <- R6::R6Class( "MlModelBuilder",
 			experimentIds         <- self$util$generateExperimentIds()
 			self$experimentId     <- experimentIds$experimentId
 			self$fullExperimentId <- experimentIds$fullExperimentId
+		},
+
+		#'
+		#' @description
+		#' Create analytical data IDs - sensor's colnames are combined
+		#' and changed into SHA 256. Thise IDs are used for automated
+		#' prediction.
+		#'
+		#' @importFrom digest digest
+		#'
+		getAnalyticalDataIds = function() {
+			# Iterate analytical dataset(s)
+			for ( dataType in names( self$analyticalDatasets ) ) {
+				cat( paste0( "Creating ", dataType, " ID ... " ) )
+				# Combine colnames by ','
+				combinedColNames <- paste( colnames( self$analyticalDatasets[[ dataType ]] ), collapse = "," )
+				# Convert it into SHA256
+				hash <- digest( combinedColNames, algo = "sha256" )
+				# Append to `analyticalDataIds`
+				self$analyticalDataIds[[ dataType ]] <- hash
+				cat( paste0( "=> DONE (", hash, ")\n" ) )
+			}
+			#cat( "How " )
+			#print( self$analyticalDataIds )
 		},
 
 		#'
@@ -917,10 +945,11 @@ MlModelBuilder <- R6::R6Class( "MlModelBuilder",
 
 			# Organise all pieces of information for JSON
 			outputData <- list(
-				id             = self$experimentId,
-				fullId         = self$fullExperimentId,
-				experimentInfo = self$experimentInfo,
-				mlRankingInfo  = self$mlRankingInfo
+				id                = self$experimentId,
+				fullId            = self$fullExperimentId,
+				analyticalDataIds = self$analyticalDataIds,
+				experimentInfo    = self$experimentInfo,
+				mlRankingInfo     = self$mlRankingInfo
 			)
 
 			# Convert it to JSON
@@ -1711,6 +1740,8 @@ modelBuilder <- function( configFileName = "ModelBuilderConfig" ) {
 	# If input datasets look ok; proceed to the modelling
 	# Create unique experimental ID
 	mlModelBuilder$getExperimentIds()
+	# Create analytical data IDs
+	mlModelBuilder$getAnalyticalDataIds()
 	# Create output dirs
 	mlModelBuilder$createOutputDirs()
 	# Create experiment overview JSON

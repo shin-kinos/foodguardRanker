@@ -12,6 +12,7 @@ R6 class as utility of Predictor which is available for all the class, members a
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-PredictorUtility-new}{\code{PredictorUtility$new()}}
+\item \href{#method-PredictorUtility-getSensorId}{\code{PredictorUtility$getSensorId()}}
 \item \href{#method-PredictorUtility-errorBomb}{\code{PredictorUtility$errorBomb()}}
 \item \href{#method-PredictorUtility-clone}{\code{PredictorUtility$clone()}}
 }
@@ -25,6 +26,25 @@ Inilialise PredictorUtility - so far it does nothing.
 \if{html}{\out{<div class="r">}}\preformatted{PredictorUtility$new()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-PredictorUtility-getSensorId"></a>}}
+\if{latex}{\out{\hypertarget{method-PredictorUtility-getSensorId}{}}}
+\subsection{Method \code{getSensorId()}}{
+Create analytical data IDs - sensor's colnames are combined
+and changed into SHA 256. Thise IDs are used for automated
+prediction.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{PredictorUtility$getSensorId(inputSensorDf)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{inputSensorDf}}{Object - input sensor as data frame.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PredictorUtility-errorBomb"></a>}}

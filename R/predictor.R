@@ -29,6 +29,25 @@ PredictorUtility <- R6::R6Class( "PredictorUtility",
 
 		#'
 		#' @description
+		#' Create analytical data IDs - sensor's colnames are combined
+		#' and changed into SHA 256. Thise IDs are used for automated
+		#' prediction.
+		#'
+		#' @importFrom digest digest
+		#'
+		#' @param inputSensorDf Object - input sensor as data frame.
+		#'
+		getSensorId = function( inputSensorDf ) {
+			return(
+				digest(
+					paste( colnames( inputSensorDf ), collapse = "," ),
+					algo = "sha256"
+				)
+			)
+		},
+
+		#'
+		#' @description
 		#' BOOOOOOOOOM !!! !!! !!!
 		#'
 		#' @param errorContent String - detailed error message.
@@ -156,13 +175,113 @@ PredictorFunctionManager <- R6::R6Class( "PredictorFunctionManager",
 			)
 
 			return( predictionResults )
+		},
+
+		#'
+		#' @description
+		#' Description here.
+		#'
+		#' @importFrom jsonlite fromJSON
+		#'
+		#' @param databaseName String - a name of database which store models built by foodguardRanker::modelBuilder().
+		#' @param productName  String - a name product being assessed.
+		#' @param modelType    String - a type of ML models. "regression" or "classification", default "regression"
+		#' @param sensorId     String - a filename of input sensor data used for the prediction.
+		#'
+		findCandidateProducts = function(
+			databaseName,
+			productName,
+			modelType = "regression",
+			sensorId
+		) {
+			# Check if input database exists.
+			if ( !dir.exists( databaseName ) ) {}
+
+			# Get all dirs in `databaseName`.
+			productDirs <- list.files( databaseName, full.names = TRUE )
+			productDirs <- productDirs[ file.info( productDirs )$isdir ]
+			# Check if each dir has `overview.json`
+			productDirs <- productDirs[ file.exists( paste0( productDirs, "/", "overview.json" ) ) ]
+
+			# Find candidate products
+			candidateProducts <- c()
+			for ( productDir in productDirs ) {
+				# 1. Read JSON content
+				overview <- paste0( productDir, "/", "overview.json" )
+				overview <- jsonlite::fromJSON( overview )
+				# 2. Check if this product can be a candidate
+				if( all(
+					# If product name is identical, AND
+					tolower( overview$experimentInfo$productName ) == tolower( productName ),
+					# If modelling type is identical, AND
+					overview$mlRankingInfo$ModellingType == modelType,
+					# If sensor ID in analytical data IDs
+					sensorId %in% unname( unlist( overview$analyticalDataIds ) )
+				) ) { candidateProducts <- c( candidateProducts, productDir ) }
+			}
+
+			#
+			if( length( candidateProducts ) == 0 ) {}
+
+			#
+			return( candidateProducts )
+		},
+
+		#'
+		#' @description
+		#' Description here.
+		#'
+		#' @importFrom magrittr %>%
+		#' @importFrom dplyr    filter
+		#' @importFrom dplyr    last
+		#'
+		#' @param candidateProductIds String[] - full paths of candidate IDs
+		#' @param sensorId            String   - SHA256 as sensor ID
+		#'
+		aaaaaa = function( candidateProductIds, sensorId ) {
+			#
+			finalBestModel <- list( MeanAccuracy = -1 )
+
+			# Iterate candidate product IDs
+			for ( productId in candidateProductIds ) {
+				# 1. Read JSON content
+				overview <- paste0( productId, "/", "overview.json" )
+				overview <- jsonlite::fromJSON( overview )
+
+				# 2. Detect sensor name
+				sensorIds  <- overview$analyticalDataIds
+				sensorName <- names( sensorIds )[ unlist( sensorIds ) == sensorId ]
+				#message( paste0( "Detected sensor name: ", sensorName ) )
+
+				# 3. Get the best model by MeanAccuracy
+				rankings  <- read.csv( paste0( productId, "/", "rankings.csv" ) )
+				bestModel <- rankings %>%
+					filter( AnalyticalData == sensorName ) %>%
+						filter( MeanAccuracy == max( MeanAccuracy ) )
+
+				# 4. Convert the data frame to list
+				bestModel <- as.list( bestModel[ 1, ] )
+				#print( bestModel )
+
+				# 5. If the MeanAccuracy hits the record, update the result model
+				if( bestModel$MeanAccuracy > finalBestModel$MeanAccuracy ) {
+					finalBestModel    <- bestModel
+					finalBestModel$id <- dplyr::last( strsplit( productId, "/" )[[ 1 ]] )
+				}
+
+				# 6. Foo bar ...
+			}
+			#print( "The final auto-detected model:" )
+			#print( finalBestModel )
+
+			return( finalBestModel )
 		}
 	)
 )
 # ANCHOR : PredictorFunctionManager ends here.
 
 #'
-#' @title Show overviews of available experiments and ther models.
+#' @title Predict freshness profile by using models based on non-invasive sensors.
 #'
 #' @description
 #' Description here.
@@ -224,4 +343,69 @@ predictor <- function(
 	if( tolower( type ) == "json" ) predictionResults <- jsonlite::toJSON( predictionResults, auto_unbox = TRUE )
 
 	return( predictionResults )
+}
+
+#'
+#' @title Automatically predict freshness profile by using models based on non-invasive sensors.
+#'
+#' @description
+#' Description here.
+#'
+#' @details
+#' This product was funded by the European Union project FoodGuard, grant number 101136542
+#'
+#' @importFrom jsonlite toJSON
+#'
+#' @param databaseName String - a name of database which store models built by foodguardRanker::modelBuilder().
+#' @param productName  String - a name product being assessed.
+#' @param inputSensor  String - a filename of input sensor data used for the prediction.
+#' @param modelType    String - a type of ML models. "regression" or "classification", default "regression"
+#' @param type         String - data type of result prediction. "list" or "json", default "list".
+#'
+#' @export
+#'
+autoPredictor <- function(
+	databaseName,             # Database name
+	productName,              # Product name
+	inputSensor,              # Input sensor data
+	modelType = "regression", # Model type
+	type      = "list"        # Output type
+) {
+	# Activate PredictorUtility class
+	util <- PredictorUtility$new()
+
+	# Open `inputSensor` as data.frame, if file does
+	# not exist, return error message
+	message( "Reading input sensor ..." )
+	if ( !file.exists( inputSensor ) ) {
+		errorResult <- list(
+			success = FALSE,
+			error   = paste0( "Sensor data ", inputSensor, " was not found." )
+		)
+		if ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
+		else return( errorResult )
+	}
+
+	# Read `inputSensor` as data.frame
+	inputSensorDf <- read.csv( inputSensor )
+	message( "=> DONE" )
+
+	# Get hash of input analytical data
+	inputSensorId <- util$getSensorId( inputSensorDf )
+
+	# Call predictFreshness from PredictorFunctionManage class
+	message( "Finding candidate products ... " )
+	predictorFunctionManager <- PredictorFunctionManager$new()
+	candidateProductIds <- predictorFunctionManager$findCandidateProducts(
+		databaseName = databaseName,
+		productName  = productName,
+		modelType    = modelType,
+		sensorId     = inputSensorId
+	)
+	message( "=> DONE" )
+
+	# Detect sensor
+	message( "aaaaaa ..." )
+	aaaaaa <- predictorFunctionManager$aaaaaa( candidateProductIds, inputSensorId )
+	print( aaaaaa )
 }

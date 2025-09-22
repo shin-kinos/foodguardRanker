@@ -20,6 +20,7 @@ R6 class which contains all the available functions for prediction.
 \itemize{
 \item \href{#method-PredictorFunctionManager-new}{\code{PredictorFunctionManager$new()}}
 \item \href{#method-PredictorFunctionManager-predictFreshness}{\code{PredictorFunctionManager$predictFreshness()}}
+\item \href{#method-PredictorFunctionManager-findCandidateProducts}{\code{PredictorFunctionManager$findCandidateProducts()}}
 \item \href{#method-PredictorFunctionManager-clone}{\code{PredictorFunctionManager$clone()}}
 }
 }
@@ -65,6 +66,34 @@ Description here.
 \item{\code{inputSensorDf}}{Object (data.frame) - a data frame of input sensor data used for the prediction.}
 
 \item{\code{type}}{String - data type of result experiment overviews. "list" or "json", default "table".}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-PredictorFunctionManager-findCandidateProducts"></a>}}
+\if{latex}{\out{\hypertarget{method-PredictorFunctionManager-findCandidateProducts}{}}}
+\subsection{Method \code{findCandidateProducts()}}{
+Description here.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{PredictorFunctionManager$findCandidateProducts(
+  databaseName,
+  productName,
+  modelType = "regression",
+  sensorId
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{databaseName}}{String - a name of database which store models built by foodguardRanker::modelBuilder().}
+
+\item{\code{productName}}{String - a name product being assessed.}
+
+\item{\code{modelType}}{String - a type of ML models. "regression" or "classification", default "regression"}
+
+\item{\code{sensorId}}{String - a filename of input sensor data used for the prediction.}
 }
 \if{html}{\out{</div>}}
 }

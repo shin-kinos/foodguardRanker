@@ -39,6 +39,7 @@ Child R6 class to build machine learning models and evaluate their performances.
 \itemize{
 \item \href{#method-MlModelBuilder-new}{\code{MlModelBuilder$new()}}
 \item \href{#method-MlModelBuilder-getExperimentIds}{\code{MlModelBuilder$getExperimentIds()}}
+\item \href{#method-MlModelBuilder-getAnalyticalDataIds}{\code{MlModelBuilder$getAnalyticalDataIds()}}
 \item \href{#method-MlModelBuilder-createOutputDirs}{\code{MlModelBuilder$createOutputDirs()}}
 \item \href{#method-MlModelBuilder-createOverView}{\code{MlModelBuilder$createOverView()}}
 \item \href{#method-MlModelBuilder-doPCAs}{\code{MlModelBuilder$doPCAs()}}
@@ -85,6 +86,18 @@ Check generateExperimentIds() function at ModelBuilderUtility class
 for more details.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{MlModelBuilder$getExperimentIds()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-MlModelBuilder-getAnalyticalDataIds"></a>}}
+\if{latex}{\out{\hypertarget{method-MlModelBuilder-getAnalyticalDataIds}{}}}
+\subsection{Method \code{getAnalyticalDataIds()}}{
+Create analytical data IDs - sensor's colnames are combined
+and changed into SHA 256. Thise IDs are used for automated
+prediction.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{MlModelBuilder$getAnalyticalDataIds()}\if{html}{\out{</div>}}
 }
 
 }
