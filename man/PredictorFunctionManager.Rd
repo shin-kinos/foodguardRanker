@@ -21,6 +21,7 @@ R6 class which contains all the available functions for prediction.
 \item \href{#method-PredictorFunctionManager-new}{\code{PredictorFunctionManager$new()}}
 \item \href{#method-PredictorFunctionManager-predictFreshness}{\code{PredictorFunctionManager$predictFreshness()}}
 \item \href{#method-PredictorFunctionManager-findCandidateProducts}{\code{PredictorFunctionManager$findCandidateProducts()}}
+\item \href{#method-PredictorFunctionManager-detectBestModel}{\code{PredictorFunctionManager$detectBestModel()}}
 \item \href{#method-PredictorFunctionManager-clone}{\code{PredictorFunctionManager$clone()}}
 }
 }
@@ -94,6 +95,25 @@ Description here.
 \item{\code{modelType}}{String - a type of ML models. "regression" or "classification", default "regression"}
 
 \item{\code{sensorId}}{String - a filename of input sensor data used for the prediction.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-PredictorFunctionManager-detectBestModel"></a>}}
+\if{latex}{\out{\hypertarget{method-PredictorFunctionManager-detectBestModel}{}}}
+\subsection{Method \code{detectBestModel()}}{
+Description here.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{PredictorFunctionManager$detectBestModel(candidateProductIds, sensorId)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{candidateProductIds}}{String[] - full paths of candidate IDs}
+
+\item{\code{sensorId}}{String   - SHA256 as sensor ID}
 }
 \if{html}{\out{</div>}}
 }

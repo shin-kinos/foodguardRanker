@@ -812,6 +812,7 @@ MlModelBuilder <- R6::R6Class( "MlModelBuilder",
 		#'
 		#' @field experimentId        Comment here.
 		#' @field fullExperimentId    Comment here.
+		#' @field analyticalDataIds   Comment here.
 		#' @field outputDir           Comment here.
 		#' @field analyticalMetaTypes Comment here.
 		#' @field mergedDataset       Comment here.

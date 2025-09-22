@@ -170,8 +170,8 @@ PredictorFunctionManager <- R6::R6Class( "PredictorFunctionManager",
 
 			# Return results data as list
 			predictionResults <- list(
-				success = TRUE,
-				data    = predictionResultsData
+				success   = TRUE,
+				freshness = predictionResultsData
 			)
 
 			return( predictionResults )
@@ -215,15 +215,14 @@ PredictorFunctionManager <- R6::R6Class( "PredictorFunctionManager",
 					tolower( overview$experimentInfo$productName ) == tolower( productName ),
 					# If modelling type is identical, AND
 					overview$mlRankingInfo$ModellingType == modelType,
-					# If sensor ID in analytical data IDs
+					# If input sensor ID is in analytical data IDs
 					sensorId %in% unname( unlist( overview$analyticalDataIds ) )
 				) ) { candidateProducts <- c( candidateProducts, productDir ) }
 			}
 
-			#
+			# FIXME: If no candidates found, return error
 			if( length( candidateProducts ) == 0 ) {}
 
-			#
 			return( candidateProducts )
 		},
 
@@ -238,8 +237,8 @@ PredictorFunctionManager <- R6::R6Class( "PredictorFunctionManager",
 		#' @param candidateProductIds String[] - full paths of candidate IDs
 		#' @param sensorId            String   - SHA256 as sensor ID
 		#'
-		aaaaaa = function( candidateProductIds, sensorId ) {
-			#
+		detectBestModel = function( candidateProductIds, sensorId ) {
+			# Initialise result best model
 			finalBestModel <- list( MeanAccuracy = -1 )
 
 			# Iterate candidate product IDs
@@ -391,7 +390,9 @@ autoPredictor <- function(
 	message( "=> DONE" )
 
 	# Get hash of input analytical data
+	message( "Generating input sensor ID ... " )
 	inputSensorId <- util$getSensorId( inputSensorDf )
+	message( paste0( "=> DONE (", inputSensorId, ")" ) )
 
 	# Call predictFreshness from PredictorFunctionManage class
 	message( "Finding candidate products ... " )
@@ -402,10 +403,42 @@ autoPredictor <- function(
 		modelType    = modelType,
 		sensorId     = inputSensorId
 	)
+	message( paste0( "=> DONE (", paste( candidateProductIds, collapse = ", " ), ")" ) )
+
+	# Detect most suitable sensor
+	message( "Detecting most suitable model ..." )
+	bestModel <- predictorFunctionManager$detectBestModel( candidateProductIds, inputSensorId )
+	message( "=> DONE" )
+	#print( bestModel )
+
+	# Predict freshness based on auto-detected best model
+	message( "Predicting freshness with auto-detected best model ..." )
+	predictionResults <- predictorFunctionManager$predictFreshness(
+		databaseName   = databaseName,             # Database name
+		id             = bestModel$id,             # Best model ID
+		mlMethod       = bestModel$MLmethod,       # Best model ML method
+		analyticalData = bestModel$AnalyticalData, # Best model analytical data
+		metadata       = bestModel$Metadata,       # Best model metadata
+		inputSensorDf  = inputSensorDf             # Input sensor data.frame
+	)
 	message( "=> DONE" )
 
-	# Detect sensor
-	message( "aaaaaa ..." )
-	aaaaaa <- predictorFunctionManager$aaaaaa( candidateProductIds, inputSensorId )
-	print( aaaaaa )
+	# Add auto-predicted model's info
+	autoPredictionResults <- list(
+		success            = predictionResults$success,  # Result status
+		detectedSensorName = bestModel$AnalyticalData,   # Detected sensor name
+		adoptedModelId     = bestModel$id,               # Adopted model ID
+		adoptedModelType   = modelType,                  # Adopted model type
+		adoptedMlMethod    = bestModel$MLmethod,         # Adopted ML method
+		adoptedMetadata    = bestModel$Metadata,         # Adopted metadata
+		freshness          = predictionResults$freshness # ResultData
+	)
+	#print( autoPredictionResults )
+
+	# If type == "json", convert into JSON
+	if( tolower( type ) == "json" ) {
+		autoPredictionResults <- jsonlite::toJSON( autoPredictionResults, auto_unbox = TRUE )
+	}
+
+	return( autoPredictionResults )
 }

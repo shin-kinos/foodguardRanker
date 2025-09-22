@@ -146,25 +146,34 @@ function(
 #* @param product String - a name of product.
 #* @param type    String - a type of model, regression or classification, default regression.
 #* @param req     Object - a request file data via curl's -F "file=@<yourSensorData.csv>" option.
+# [e.g.] % curl -X POST -F "file=@myEnoseData.csv" "http://127.0.0.1:8008/predict-auto?product=mincedbeef&type=regression"
 function( predict, type = "regression", req ) {
 	# REVIEW : Some sources say "req$files$file$datapath is enougth".
 	# REVIEW : But I still do not believe in it!
-	#uploadedTempFile     <- mime::parse_multipart( req )
-	#uploadedTempFilePath <- uploadedTempFile$file$datapath
-	#message( paste0( "Uploaded temp file path: ", uploadedTempFilePath ) )
+	uploadedTempFile     <- mime::parse_multipart( req )
+	uploadedTempFilePath <- uploadedTempFile$file$datapath
+	message( paste0( "Uploaded temp file path: ", uploadedTempFilePath ) )
 
-	return(
-		list(
-			success        = unbox( TRUE ),
-			title          = "MOCK-UP MOCK-UP MOCK-UP",
-			description    = "This is mock-up of auto prediction",
-			productName    = "MincedBeef",
-			productID      = "26d1bf17656d",
-			modelType      = "regression",
-			detectedSensor = "eNose",
-			metadata       = "TVC",
-			mlMethod       = "svmRadial",
-			freshness      = 7.09
-		)
+	autoPredictionResults <- foodguardRanker::autoPredictor(
+		databaseName = dbPath,               # Database name
+		productName  = req$args$product,     # Product name
+		modelType    = req$args$type,        # Model type
+		inputSensor  = uploadedTempFilePath, # Input sensor file path
+		type         = "list"                # Output type
 	)
+	#print( autoPredictionResults )
+
+	# Unbox all propaties except for `freshness`
+	for ( property in names( autoPredictionResults ) ) {
+		if ( property != "freshness" ) {
+			autoPredictionResults[[ property ]] <- unbox( autoPredictionResults[[ property ]] )
+		}
+	}
+	# Delete the uploaded temp file
+	if ( file.exists( uploadedTempFilePath ) == TRUE ) {
+		file.remove( uploadedTempFilePath )
+		message( paste0( "Temp file ", uploadedTempFilePath, " was deleted." ) )
+	}
+
+	return( autoPredictionResults )
 }

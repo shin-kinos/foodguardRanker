@@ -18,6 +18,8 @@ Child R6 class to build machine learning models and evaluate their performances.
 
 \item{\code{fullExperimentId}}{Comment here.}
 
+\item{\code{analyticalDataIds}}{Comment here.}
+
 \item{\code{outputDir}}{Comment here.}
 
 \item{\code{analyticalMetaTypes}}{Comment here.}
