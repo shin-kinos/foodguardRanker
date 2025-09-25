@@ -451,12 +451,11 @@ autoPredictor <- function(
 	if      ( isCsv == TRUE  && isJson == FALSE ) { inputSensorDf <- read.csv( inputSensor ) }
 	else if ( isCsv == FALSE && isJson == TRUE  ) { inputSensorDf <- jsonlite::fromJSON( readLines( inputSensor, warn = FALSE ) ) }
 	else if ( isCsv == FALSE && isJson == FALSE ) {
-		errorResult <- list(
-			success = FALSE,
-			error   = "Invalid format of input data."
-		)
-		if ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
-		else return( errorResult )
+		# If `isCsv == FALSE && isJson == FALSE`, return error message
+		errorResult <- list( success = FALSE, error = "Invalid format of input data." )
+		if      ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
+		else if ( tolower( type ) == "list" ) return( errorResult )
+		else                                  return( errorResult )
 	}
 	message( "=> DONE" )
 
@@ -475,12 +474,11 @@ autoPredictor <- function(
 		sensorId     = inputSensorId
 	)
 	if( length( candidateProductIds ) == 0 ) {
-		errorResult <- list(
-			success = FALSE,
-			error   = "No candidate products found - double check the input parameters."
-		)
-		if ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
-		else return( errorResult )
+		# `length( candidateProductIds ) == 0`, return error message
+		errorResult <- list( success = FALSE, error = "No candidate products found - double check the input parameters." )
+		if      ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
+		else if ( tolower( type ) == "list" ) return( errorResult )
+		else                                  return( errorResult )
 	}
 	message( paste0( "=> DONE (", paste( candidateProductIds, collapse = ", " ), ")" ) )
 
