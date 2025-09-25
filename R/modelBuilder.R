@@ -989,9 +989,9 @@ MlModelBuilder <- R6::R6Class( "MlModelBuilder",
 				cat( paste0(  "Creating '", outputFileName, "' ... " ) )
 
 				# 2. Do PCA and get PC scores
-				analyticalDataset  <- analyticalDatasets[[ analyticalDataType ]]
-				pcaResult          <- prcomp( analyticalDataset, retx = TRUE, center = TRUE, scale = TRUE )
-				pcScores           <- as.data.frame( round( pcaResult$x[ , 1:4 ], 5 ) )
+				analyticalDataset <- analyticalDatasets[[ analyticalDataType ]]
+				pcaResult         <- prcomp( analyticalDataset, retx = TRUE, center = TRUE, scale = TRUE )
+				pcScores          <- as.data.frame( round( pcaResult$x[ , 1:4 ], 5 ) )
 
 				# 3. Set sample names
 				pcScores[[ sampleColumnName ]] <- rownames( pcScores )

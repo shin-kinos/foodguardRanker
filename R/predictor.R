@@ -48,6 +48,46 @@ PredictorUtility <- R6::R6Class( "PredictorUtility",
 
 		#'
 		#' @description
+		#' Check if the input data is in CSV format - if CSV, return TRUE, otherwise FALSE.
+		#'
+		#' @param inputSensor String - input sensor file path.
+		#'
+		checkIfCsv = function( inputSensor ) {
+			# Read data as lines
+			lines <- readLines( inputSensor, warn = FALSE )
+
+			# Get number of columns in each row by ','
+			nCols <- sapply( lines, function( line ) {
+				length( strsplit( line, "," )[[ 1 ]] )
+			}, USE.NAMES = FALSE )
+
+			# If nCols are unified, return TRUE
+			if ( length( unique( nCols ) ) == 1 && nCols[ 1 ] != 0 ) return( TRUE  )
+			else                                                     return( FALSE )
+		},
+
+		#'
+		#' @description
+		#' Check if the input data is in JSON format - if JSON, return TRUE, otherwise FALSE.
+		#'
+		#' @importFrom jsonlite fromJSON
+		#'
+		#' @param inputSensor String - input sensor file path.
+		#'
+		checkIfJson = function( inputSensor ) {
+			tryCatch(
+				{
+					jsonlite::fromJSON( readLines( inputSensor, warn = FALSE ) )
+					return( TRUE )
+				},
+				error = function( error ) {
+					return( FALSE )
+				}
+			)
+		},
+
+		#'
+		#' @description
 		#' BOOOOOOOOOM !!! !!! !!!
 		#'
 		#' @param errorContent String - detailed error message.
@@ -170,8 +210,10 @@ PredictorFunctionManager <- R6::R6Class( "PredictorFunctionManager",
 
 			# Return results data as list
 			predictionResults <- list(
-				success   = TRUE,
-				freshness = predictionResultsData
+				success = TRUE,
+				data    = list(
+					freshness = predictionResultsData
+				)
 			)
 
 			return( predictionResults )
@@ -289,6 +331,7 @@ PredictorFunctionManager <- R6::R6Class( "PredictorFunctionManager",
 #' This product was funded by the European Union project FoodGuard, grant number 101136542
 #'
 #' @importFrom jsonlite toJSON
+#' @importFrom jsonlite fromJSON
 #'
 #' @param databaseName   String - a name of database which store models built by foodguardRanker::modelBuilder().
 #' @param id             String - an ID which store models built by foodguardRanker::modelBuilder().
@@ -310,22 +353,36 @@ predictor <- function(
 	type = "list"   # Output type
 ) {
 	# Activate PredictorUtility class
-	# REVIEW : Needy ???
+	# REVIEW : Needy ??? <- YES!
 	util <- PredictorUtility$new()
 
 	# Open `inputSensor` as data.frame, if file does
 	# not exist, return error message
+	message( "Checking if input file exists ..." )
 	if ( !file.exists( inputSensor ) ) {
-		errorResult <- list(
-			success = FALSE,
-			error   = paste0( "Sensor data ", inputSensor, " was not found." )
-		)
-		if ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
-		else return( errorResult )
+		# If `file.exists( inputSensor ) == FALSE`, return error message
+		errorResult <- list( success = FALSE, error = paste0( "Sensor data ", inputSensor, " was not found." ) )
+		if      ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
+		else if ( tolower( type ) == "list" ) return( errorResult )
+		else                                  return( errorResult )
 	}
+	message( "=> DONE (TRUE)" )
 
-	# Read `inputSensor` as data.frame
-	inputSensorDf <- read.csv( inputSensor )
+	# Check if the input file is CSV or JSON
+	message( "Checking input data format ..." )
+	isCsv         <- util$checkIfCsv(  inputSensor )
+	isJson        <- util$checkIfJson( inputSensor )
+	inputSensorDf <- NULL
+	if      ( isCsv == TRUE  && isJson == FALSE ) { inputSensorDf <- read.csv( inputSensor ) }
+	else if ( isCsv == FALSE && isJson == TRUE  ) { inputSensorDf <- jsonlite::fromJSON( readLines( inputSensor, warn = FALSE ) ) }
+	else if ( isCsv == FALSE && isJson == FALSE ) {
+		# If `isCsv == FALSE && isJson == FALSE`, return error message
+		errorResult <- list( success = FALSE, error = "Invalid format of input data." )
+		if      ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
+		else if ( tolower( type ) == "list ") return( errorResult )
+		else                                  return( errorResult )
+	}
+	message( "=> DONE" )
 
 	# Call predictFreshness from PredictorFunctionManage class
 	predictorFunctionManager <- PredictorFunctionManager$new()
@@ -384,9 +441,23 @@ autoPredictor <- function(
 		if ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
 		else return( errorResult )
 	}
+	message( "=> DONE" )
 
-	# Read `inputSensor` as data.frame
-	inputSensorDf <- read.csv( inputSensor )
+	# Check if the input file is CSV or JSON
+	message( "Checking input data format ..." )
+	isCsv         <- util$checkIfCsv(  inputSensor )
+	isJson        <- util$checkIfJson( inputSensor )
+	inputSensorDf <- NULL
+	if      ( isCsv == TRUE  && isJson == FALSE ) { inputSensorDf <- read.csv( inputSensor ) }
+	else if ( isCsv == FALSE && isJson == TRUE  ) { inputSensorDf <- jsonlite::fromJSON( readLines( inputSensor, warn = FALSE ) ) }
+	else if ( isCsv == FALSE && isJson == FALSE ) {
+		errorResult <- list(
+			success = FALSE,
+			error   = "Invalid format of input data."
+		)
+		if ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
+		else return( errorResult )
+	}
 	message( "=> DONE" )
 
 	# Get hash of input analytical data
@@ -403,6 +474,14 @@ autoPredictor <- function(
 		modelType    = modelType,
 		sensorId     = inputSensorId
 	)
+	if( length( candidateProductIds ) == 0 ) {
+		errorResult <- list(
+			success = FALSE,
+			error   = "No candidate products found - double check the input parameters."
+		)
+		if ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
+		else return( errorResult )
+	}
 	message( paste0( "=> DONE (", paste( candidateProductIds, collapse = ", " ), ")" ) )
 
 	# Detect most suitable sensor
@@ -425,13 +504,15 @@ autoPredictor <- function(
 
 	# Add auto-predicted model's info
 	autoPredictionResults <- list(
-		success            = predictionResults$success,  # Result status
-		detectedSensorName = bestModel$AnalyticalData,   # Detected sensor name
-		adoptedModelId     = bestModel$id,               # Adopted model ID
-		adoptedModelType   = modelType,                  # Adopted model type
-		adoptedMlMethod    = bestModel$MLmethod,         # Adopted ML method
-		adoptedMetadata    = bestModel$Metadata,         # Adopted metadata
-		freshness          = predictionResults$freshness # ResultData
+		success = predictionResults$success, # Result status
+		data    = list(
+			detectedSensorName = bestModel$AnalyticalData,        # Detected sensor name
+			adoptedModelId     = bestModel$id,                    # Adopted model ID
+			adoptedModelType   = modelType,                       # Adopted model type
+			adoptedMlMethod    = bestModel$MLmethod,              # Adopted ML method
+			adoptedMetadata    = bestModel$Metadata,              # Adopted metadata
+			freshness          = predictionResults$data$freshness # ResultData
+		)
 	)
 	#print( autoPredictionResults )
 

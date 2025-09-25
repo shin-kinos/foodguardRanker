@@ -74,8 +74,13 @@ function( id ) {
 		type         = "list"
 	)
 
-	# Unbox success property
+	# Unbox several properties
 	detailsResults$success <- unbox( detailsResults$success )
+	for ( property in names( detailsResults$data ) ) {
+		if ( !( property %in% c( "Author", "AnalyticalDatasets", "MetaDatasets", "MLlist" ) ) ) {
+			detailsResults$data[[ property ]] <- unbox( detailsResults$data[[ property ]] )
+		}
+	}
 
 	return( detailsResults )
 }
@@ -92,7 +97,7 @@ function( id ) {
 		type         = "list"
 	)
 
-	# Unbox success property
+	# Unbox success properties
 	rankingsResults$success <- unbox( rankingsResults$success )
 
 	return( rankingsResults )
@@ -148,6 +153,9 @@ function(
 #* @param req     Object - a request file data via curl's -F "file=@<yourSensorData.csv>" option.
 # [e.g.] % curl -X POST -F "file=@myEnoseData.csv" "http://127.0.0.1:8008/predict-auto?product=mincedbeef&type=regression"
 function( predict, type = "regression", req ) {
+	# Set default values
+	if( is.null( req$args$type ) ) req$args$type <- type
+
 	# REVIEW : Some sources say "req$files$file$datapath is enougth".
 	# REVIEW : But I still do not believe in it!
 	uploadedTempFile     <- mime::parse_multipart( req )
@@ -163,12 +171,14 @@ function( predict, type = "regression", req ) {
 	)
 	#print( autoPredictionResults )
 
-	# Unbox all propaties except for `freshness`
-	for ( property in names( autoPredictionResults ) ) {
+	# Unbox several properties
+	autoPredictionResults$success <- unbox( autoPredictionResults$success )
+	for ( property in names( autoPredictionResults$data ) ) {
 		if ( property != "freshness" ) {
-			autoPredictionResults[[ property ]] <- unbox( autoPredictionResults[[ property ]] )
+			autoPredictionResults$data[[ property ]] <- unbox( autoPredictionResults$data[[ property ]] )
 		}
 	}
+
 	# Delete the uploaded temp file
 	if ( file.exists( uploadedTempFilePath ) == TRUE ) {
 		file.remove( uploadedTempFilePath )
