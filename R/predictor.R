@@ -154,12 +154,12 @@ PredictorFunctionManager <- R6::R6Class( "PredictorFunctionManager",
 			}
 
 			# Check if file `productDir/MODELS` exists. If FALSE, return error message.
-			modelsDirPath <- paste0( productDir, "/", "MODELS" )
+			modelsDirPath <- paste0( productDir, "/", "MODELs" )
 			if ( !dir.exists( modelsDirPath ) ) {
 				return(
 					list(
 						success = FALSE,
-						error   = paste0( "In product ", productDir, ", dir MODELS was not found." )
+						error   = paste0( "In product ", productDir, ", dir MODELs was not found." )
 					)
 				)
 			}
