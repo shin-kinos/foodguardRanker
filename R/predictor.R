@@ -64,8 +64,8 @@ PredictorUtility <- R6::R6Class( "PredictorUtility",
 				length( strsplit( line, "," )[[ 1 ]] )
 			}, USE.NAMES = FALSE )
 
-			# If data is NOT one line, AND nCols are unified, return TRUE
-			if ( length( lines ) > 1 && length( unique( nCols ) ) == 1 && nCols[ 1 ] != 0 ) return( TRUE )
+			# If nCols are unified, and not one column, return TRUE
+			if ( length( unique( nCols ) ) == 1 && nCols[ 1 ] > 1 ) return( TRUE )
 			else return( FALSE )
 		},
 
