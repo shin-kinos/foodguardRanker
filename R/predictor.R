@@ -38,6 +38,10 @@ PredictorUtility <- R6::R6Class( "PredictorUtility",
 		#' @param inputSensorDf Object - input sensor as data frame.
 		#'
 		getSensorId = function( inputSensorDf ) {
+			message( "\n[TEST][TEST][TEST] paste( colnames( inputSensorDf ), collapse = \",\" ):" )
+			message( paste( colnames( inputSensorDf ), collapse = "," ) )
+			message( "" )
+
 			return(
 				digest(
 					paste( colnames( inputSensorDf ), collapse = "," ),
@@ -61,9 +65,9 @@ PredictorUtility <- R6::R6Class( "PredictorUtility",
 				length( strsplit( line, "," )[[ 1 ]] )
 			}, USE.NAMES = FALSE )
 
-			# If nCols are unified, return TRUE
-			if ( length( unique( nCols ) ) == 1 && nCols[ 1 ] != 0 ) return( TRUE  )
-			else                                                     return( FALSE )
+			# If data is NOT one line, AND nCols are unified, return TRUE
+			if ( length( lines ) > 1 && length( unique( nCols ) ) == 1 && nCols[ 1 ] != 0 ) return( TRUE )
+			else return( FALSE )
 		},
 
 		#'
@@ -153,7 +157,7 @@ PredictorFunctionManager <- R6::R6Class( "PredictorFunctionManager",
 				)
 			}
 
-			# Check if file `productDir/MODELS` exists. If FALSE, return error message.
+			# Check if file `productDir/MODELs` exists. If FALSE, return error message.
 			modelsDirPath <- paste0( productDir, "/", "MODELs" )
 			if ( !dir.exists( modelsDirPath ) ) {
 				return(
@@ -164,7 +168,7 @@ PredictorFunctionManager <- R6::R6Class( "PredictorFunctionManager",
 				)
 			}
 
-			# Check if file `productDir/MODELS/mlMethod-analyticalData-metadata.rds` exists.
+			# Check if file `productDir/MODELs/mlMethod-analyticalData-metadata.rds` exists.
 			# If FALSE, return error message.
 			modelFilePath <- paste0( modelsDirPath, "/", mlMethod, "-", analyticalData, "-", metadata, ".rds" )
 			if ( !file.exists( modelFilePath ) ) {
@@ -375,8 +379,8 @@ predictor <- function(
 	inputSensorDf <- NULL
 	if      ( isCsv == TRUE  && isJson == FALSE ) { inputSensorDf <- read.csv( inputSensor ) }
 	else if ( isCsv == FALSE && isJson == TRUE  ) { inputSensorDf <- jsonlite::fromJSON( readLines( inputSensor, warn = FALSE ) ) }
-	else if ( isCsv == FALSE && isJson == FALSE ) {
-		# If `isCsv == FALSE && isJson == FALSE`, return error message
+	else {
+		# Else, return error message
 		errorResult <- list( success = FALSE, error = "Invalid format of input data." )
 		if      ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
 		else if ( tolower( type ) == "list ") return( errorResult )
@@ -445,8 +449,8 @@ autoPredictor <- function(
 
 	# Check if the input file is CSV or JSON
 	message( "Checking input data format ..." )
-	isCsv         <- util$checkIfCsv(  inputSensor )
-	isJson        <- util$checkIfJson( inputSensor )
+	isCsv  <- util$checkIfCsv(  inputSensor ); message( paste0( "Is it  CSV?: ", isCsv  ) )
+	isJson <- util$checkIfJson( inputSensor ); message( paste0( "Is it JSON?: ", isJson ) )
 	inputSensorDf <- NULL
 	if      ( isCsv == TRUE  && isJson == FALSE ) { inputSensorDf <- read.csv( inputSensor ) }
 	else if ( isCsv == FALSE && isJson == TRUE  ) { inputSensorDf <- jsonlite::fromJSON( readLines( inputSensor, warn = FALSE ) ) }
@@ -458,6 +462,7 @@ autoPredictor <- function(
 		else                                  return( errorResult )
 	}
 	message( "=> DONE" )
+	str( inputSensorDf )
 
 	# Get hash of input analytical data
 	message( "Generating input sensor ID ... " )
