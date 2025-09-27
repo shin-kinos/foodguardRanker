@@ -448,8 +448,8 @@ autoPredictor <- function(
 
 	# Check if the input file is CSV or JSON
 	message( "Checking input data format ..." )
-	isCsv  <- util$checkIfCsv(  inputSensor ); message( paste0( "Is it  CSV?: ", isCsv  ) )
-	isJson <- util$checkIfJson( inputSensor ); message( paste0( "Is it JSON?: ", isJson ) )
+	isCsv  <- util$checkIfCsv(  inputSensor ); message( paste0( "    * Is it  CSV?: ", isCsv  ) )
+	isJson <- util$checkIfJson( inputSensor ); message( paste0( "    * Is it JSON?: ", isJson ) )
 	inputSensorDf <- NULL
 	if      ( isCsv == TRUE  && isJson == FALSE ) { inputSensorDf <- read.csv( inputSensor ) }
 	else if ( isCsv == FALSE && isJson == TRUE  ) { inputSensorDf <- jsonlite::fromJSON( readLines( inputSensor, warn = FALSE ) ) }
