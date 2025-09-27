@@ -38,10 +38,9 @@ PredictorUtility <- R6::R6Class( "PredictorUtility",
 		#' @param inputSensorDf Object - input sensor as data frame.
 		#'
 		getSensorId = function( inputSensorDf ) {
-			message( "\n[TEST][TEST][TEST] paste( colnames( inputSensorDf ), collapse = \",\" ):" )
-			message( paste( colnames( inputSensorDf ), collapse = "," ) )
-			message( "" )
-
+			#NOTE: Comments to check the content of colnames( inputSensorDf )
+			#message( "[TEST] paste( colnames( inputSensorDf ), collapse = \",\" ):" )
+			#message( paste( colnames( inputSensorDf ), collapse = "," ) )
 			return(
 				digest(
 					paste( colnames( inputSensorDf ), collapse = "," ),
@@ -462,7 +461,6 @@ autoPredictor <- function(
 		else                                  return( errorResult )
 	}
 	message( "=> DONE" )
-	str( inputSensorDf )
 
 	# Get hash of input analytical data
 	message( "Generating input sensor ID ... " )

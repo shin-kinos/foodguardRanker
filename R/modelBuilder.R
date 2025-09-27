@@ -892,7 +892,8 @@ MlModelBuilder <- R6::R6Class( "MlModelBuilder",
 		#' @importFrom digest digest
 		#'
 		getAnalyticalDataIds = function() {
-			# Iterate analytical dataset(s)
+			# Iterate analytical dataset(s) and generate SHA256
+			# based on the colnames
 			for ( dataType in names( self$analyticalDatasets ) ) {
 				cat( paste0( "Creating ", dataType, " ID ... " ) )
 				# Combine colnames by ','
@@ -903,8 +904,6 @@ MlModelBuilder <- R6::R6Class( "MlModelBuilder",
 				self$analyticalDataIds[[ dataType ]] <- hash
 				cat( paste0( "=> DONE (", hash, ")\n" ) )
 			}
-			#cat( "How " )
-			#print( self$analyticalDataIds )
 		},
 
 		#'
