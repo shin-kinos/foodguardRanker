@@ -334,7 +334,8 @@ ModelBuilderConfigParser <- R6::R6Class( "ModelBuilderConfigParser",
 				ridgeMinLambda      = configContent$RidgeMinLambda,
 				ridgeMaxLambda      = configContent$RidgeMaxLambda,
 				ridgeLambdaLength   = configContent$RidgeLambdaLength,
-				enetTuneLength      = configContent$EnetTuneLength
+				enetTuneLength      = configContent$EnetTuneLength,
+				nNetMaxNWts         = configContent$NNetMaxNWts
 			)
 		},
 
@@ -390,6 +391,7 @@ ModelBuilderConfigParser <- R6::R6Class( "ModelBuilderConfigParser",
 			cat( paste0( "    * Ridge max lambda               : ", self$mlRankingInfo$ridgeMaxLambda,      "\n" ) )
 			cat( paste0( "    * Ridge lambda length            : ", self$mlRankingInfo$ridgeLambdaLength,   "\n" ) )
 			cat( paste0( "    * Elastic tune length            : ", self$mlRankingInfo$enetTuneLength,      "\n" ) )
+			cat( paste0( "    * Neural net max weights         : ", self$mlRankingInfo$nNetMaxNWts,         "\n" ) )
 			cat( "================================================================================" )
 			cat( "\n\n" )
 		},
@@ -616,6 +618,8 @@ ModelBuilderInputDataManager <- R6::R6Class( "ModelBuilderInputDataManager",
 				# 6. Remove NA samples
 				self$analyticalDatasets[[ dataType ]] <- self$analyticalDatasets[[ dataType ]] %>%          # Get dataset
 					dplyr::filter( !( row.names( self$analyticalDatasets[[ dataType ]] ) %in% naSamples ) ) # and filter samples which are NOT omitted samples
+
+				# Show final dataset if required
 				#print( self$analyticalDatasets[[ dataType ]] )
 
 				# 7. Show warning for NA samples if required
@@ -627,7 +631,7 @@ ModelBuilderInputDataManager <- R6::R6Class( "ModelBuilderInputDataManager",
 					cat( paste0( " - No omitted samples in ", dataType, ", good data!\n" ) )
 				}
 
-				# 8. Show warning for NA samples if required
+				# 8. Show warning for duplicated samples if required
 				if ( length( dupSamples ) >= 1 ) {
 					cat( paste0( "WARNING: Following ", length( dupSamples ), " sample duplications in ", dataType, " were uniqued:\n" ) )
 					cat( paste0( "    * ", paste( dupSamples, collapse = "\n    * " ), "\n" ) )
@@ -1291,8 +1295,8 @@ MlModelBuilder <- R6::R6Class( "MlModelBuilder",
 			knnKRange  <- round( seq( 3, knnMaxK, length = knnKlength ) )
 
 			# Set advanced params for hyper parameter tuning (for SVMs)
-			svmRadialTuneLength <- self$mlRankingInfo$svmRadialTuneLength           # SVM radial
-			svmPolyTuneLength   <- self$mlRankingInfo$svmPolyTuneLength             # SVM poly
+			svmRadialTuneLength <- self$mlRankingInfo$svmRadialTuneLength # SVM radial
+			svmPolyTuneLength   <- self$mlRankingInfo$svmPolyTuneLength   # SVM poly
 
 			# Set advanced params for hyper parameter tuning (for Random forest)
 			randomForestNtree <- self$mlRankingInfo$randomForestNtree  # Comment here
@@ -1300,6 +1304,9 @@ MlModelBuilder <- R6::R6Class( "MlModelBuilder",
 			# Set advanced params for hyper parameter tuning (for XGBoosts)
 			xgbLinearTuneLength <- self$mlRankingInfo$xgbLinearTuneLength
 			xgbTreeTuneLength   <- self$mlRankingInfo$xgbTreeTuneLength
+
+			# Set advanced params for nNetMaxNWts (for Neural network)
+			nNetMaxNWts <- self$mlRankingInfo$nNetMaxNWts
 
 			cat( paste0( "\nFinding the best tuned parameter(s) ... \n" ) )
 
@@ -1326,6 +1333,7 @@ MlModelBuilder <- R6::R6Class( "MlModelBuilder",
 			# FIXME  : MaxNWts option needs to increase to solve this issue.
 			# REVIEW : Should MaxNWts NOT be Inf ??? (if Inf, it will take ages!)
 			# REVIEW : The number should be large enough (e.g., 15000, 30000, 99999) but no need to be Inf ???
+			# REVIEW : Decided to set default at 99999 on the config file (nNetMaxNWts) at the moment.
 			model <- switch( mlMethodArg,
 				"knn"       = caret::train( metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, tuneGrid   = data.frame( k = knnKRange      ) ),
 				"svmRadial" = caret::train( metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, tuneLength = svmRadialTuneLength              ),
@@ -1333,7 +1341,7 @@ MlModelBuilder <- R6::R6Class( "MlModelBuilder",
 				"rf"        = caret::train( metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, ntree      = randomForestNtree                ),
 				"xgbLinear" = caret::train( metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, tuneLength = xgbLinearTuneLength              ),
 				"xgbTree"   = caret::train( metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, tuneLength = xgbTreeTuneLength, verbosity = 0 ),
-				"nnet"      = caret::train( metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, trace      = FALSE, MaxNWts = Inf             ),
+				"nnet"      = caret::train( metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, trace      = FALSE, MaxNWts = nNetMaxNWts     ),
 				caret::train(               metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess )
 			)
 
@@ -1383,11 +1391,12 @@ MlModelBuilder <- R6::R6Class( "MlModelBuilder",
 				# FIXME  : MaxNWts option needs to increase to solve this issue.
 				# REVIEW : Should MaxNWts NOT be Inf ??? (if Inf, it will take ages!)
 				# REVIEW : The number should be large enough (e.g., 15000, 30000, 99999) but no need to be Inf ???
+				# REVIEW : Decided to set default at 99999 on the config file (nNetMaxNWts) at the moment.
 				model <- switch( mlMethodArg,
-					"rf"        = caret::train( metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, tuneGrid = bestTunedParams, ntree = randomForestNtree    ),
-					"xgbTree"   = caret::train( metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, tuneGrid = bestTunedParams, verbosity = 0                ),
-					"nnet"      = caret::train( metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, tuneGrid = bestTunedParams, trace = FALSE, MaxNWts = Inf ),
-					caret::train(               metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, tuneGrid = bestTunedParams                               )
+					"rf"        = caret::train( metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, tuneGrid = bestTunedParams, ntree = randomForestNtree ),
+					"xgbTree"   = caret::train( metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, tuneGrid = bestTunedParams, verbosity = 0             ),
+					"nnet"      = caret::train( metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, tuneGrid = bestTunedParams, trace = FALSE, MaxNWts = nNetMaxNWts ),
+					caret::train(               metadata ~ ., method = mlMethodArg, data = trainData, preProcess = trainPreProcess, tuneGrid = bestTunedParams                                       )
 				)
 
 				# 5. Show modelling result (if required)

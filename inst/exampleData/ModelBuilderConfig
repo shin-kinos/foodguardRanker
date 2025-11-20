@@ -1,0 +1,40 @@
+{
+	"Title"             : "DemoExperiment",
+	"Description"       : "This is demo experiment.",
+	"Author"            : [ "Firstname-Lastname" ],
+	"Organisation"      : [ "Organisation01" ],
+	"ProductName"       : "MincedBeef",
+	"Date"              : "01-01-2025",
+	"OutputDir"         : "./output",
+	"ModellingType"     : "regression",
+	"MLlist"            : [ "pls", "knn", "svmRadial", "randomForest" ],
+	"Iteration"         : 20,
+	"Log10Conversion"   : true,
+	"TrainProportion"   : 0.7,
+	"AnalyticalData" : {
+		"VM"   : "./VM.csv",
+		"FTIR" : "./FTIR.csv"
+	},
+	"Metadata" : {
+		"TVC"         : "./TVC.csv",
+		"Pseudomonas" : "./Pseudomonas.csv"
+	},
+	"SampleColumnName"  : "Sample",
+
+	"TrainPreprocess"     : [ "center", "scale" ],
+	"KnnMaxK"             : 20,
+	"KnnKLength"          : 10,
+	"SVMRadialTuneLength" : 5,
+	"SVMPolyTuneLength"   : 3,
+	"RandomForestNtree"   : 150,
+	"XgbLinearTuneLength" : 2,
+	"XgbTreeTuneLength"   : 2,
+	"LassoMinLambda"      : 0.1,
+	"LassoMaxLambda"      : 1,
+	"LassoLambdaLength"   : 10,
+	"RidgeMinLambda"      : 1,
+	"RidgeMaxLambda"      : 10,
+	"RidgeLambdaLength"   : 10,
+	"EnetTuneLength"      : 3,
+	"NNetMaxNWts"         : 99999
+}
