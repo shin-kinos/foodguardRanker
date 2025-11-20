@@ -315,6 +315,7 @@ ModelBuilderConfigParser <- R6::R6Class( "ModelBuilderConfigParser",
 				modellingType       = configContent$ModellingType,
 				mlList              = configContent$MLlist,
 				iteration           = configContent$Iteration,
+				log10Conversion     = configContent$Log10Conversion,
 				trainProportion     = configContent$TrainProportion,
 				analyticalDataFiles = configContent$AnalyticalData,
 				metaDataFiles       = configContent$Metadata,
@@ -357,6 +358,7 @@ ModelBuilderConfigParser <- R6::R6Class( "ModelBuilderConfigParser",
 			cat( paste0( "    * Modelling type   : ", self$mlRankingInfo$modellingType, "\n" ) )
 			cat( paste0( "    * Models used      : ", paste( self$mlRankingInfo$mlList, collapse = ", " ), "\n" ) )
 			cat( paste0( "    * Iteration        : ", self$mlRankingInfo$iteration,       "\n" ) )
+			cat( paste0( "    * Log10 conversion : ", self$mlRankingInfo$log10Conversion, "\n" ) )
 			cat( paste0( "    * Train proportion : ", self$mlRankingInfo$trainProportion, "\n" ) )
 
 			cat( "\nINPUT ANALYTICAL/METADATA INFO\n" )
@@ -414,6 +416,7 @@ ModelBuilderConfigParser <- R6::R6Class( "ModelBuilderConfigParser",
 			# Check ML modelling info is OK
 			if ( typeof( self$mlRankingInfo$iteration ) != "integer"                                  ) { self$util$errorBomb( "Iteration number must be integer."                              ) }
 			if ( self$mlRankingInfo$iteration < 3                                                     ) { self$util$errorBomb( "Iteration number must be at least 3 or more."                   ) }
+			if ( !is.logical( self$mlRankingInfo$log10Conversion )                                    ) { self$util$errorBomb( "Log 10 conversion must be boolean value (true or false)."       ) }
 			if ( !( self$mlRankingInfo$trainProportion %in% c( 0.6, 0.7, 0.8 ) )                      ) { self$util$errorBomb( "Train proportion must be 0.6, 0.7 or 0.8."                      ) }
 			if ( !( self$mlRankingInfo$modellingType %in% c( "classification", "regression" ) )       ) { self$util$errorBomb( "Modelling type must be \"classification\" or \"regression\"."   ) }
 			if ( length( self$mlRankingInfo$mlList ) != length( unique( self$mlRankingInfo$mlList ) ) ) { self$util$errorBomb( "Duplicated ML methods - check \"MLlist\" in config file again." ) }
@@ -579,37 +582,60 @@ ModelBuilderInputDataManager <- R6::R6Class( "ModelBuilderInputDataManager",
 			# Set sample column name
 			sampleColumnName <- self$mlRankingInfo$sampleColumnName
 
+			# For metadata, set log10 conversion flag
+			modellingType <- self$mlRankingInfo$modellingType
+			convertLog10  <- self$mlRankingInfo$log10Conversion
+
 			# Purify analytical datasets with sample column names
 			for ( dataType in names( self$analyticalDatasets ) ) {
 				cat( paste0( "Purifying ", dataType, " dataset ... " ) )
 				# 0. Check if this data contains `sampleColumnName` column,
 				# NOTE : I decided to do this in `checkDatasets` member function, code was deleted
 
-				# 1. Set row names
+				# 1. Get duplicated samples (if found)
+				samples    <- ( self$analyticalDatasets[[ dataType ]] )[[ sampleColumnName ]]
+				dupSamples <- unique( samples[ duplicated( samples ) ] )
+
+				# 2. Remove duplicated samples (leave only 1st ones)
+				self$analyticalDatasets[[ dataType ]] <- self$analyticalDatasets[[ dataType ]][
+					!duplicated( ( self$analyticalDatasets[[ dataType ]] )[[ sampleColumnName ]] ), ]
+
+				# 3. Set row names
 				rowNames <- ( self$analyticalDatasets[[ dataType ]] )[[ sampleColumnName ]]
 				rownames( self$analyticalDatasets[[ dataType ]] ) <- rowNames
 
-				# 2. Remove sample names column
+				# 4. Remove sample names column
 				self$analyticalDatasets[[ dataType ]] <- self$analyticalDatasets[[ dataType ]] %>%
 					dplyr::select( -{{ sampleColumnName }} ) # Select columns except EXCEPT FOR {{ sampleColumnName }}
 
-				# 3. Find samples which contains NA values
-				omittedSamples <- rownames(
+				# 5. Find samples which contains NA values
+				naSamples <- rownames(
 					self$analyticalDatasets[[ dataType ]] %>%                          # Get dataset
 						dplyr::filter( dplyr::if_any( dplyr::everything(), is.na ) ) ) # and find rows which contain NAs at any columns
 
-				# 4. Remove omitted samples
-				self$analyticalDatasets[[ dataType ]] <- self$analyticalDatasets[[ dataType ]] %>%               # Get dataset
-					dplyr::filter( !( row.names( self$analyticalDatasets[[ dataType ]] ) %in% omittedSamples ) ) # and filter samples which are NOT omitted samples
+				# 6. Remove NA samples
+				self$analyticalDatasets[[ dataType ]] <- self$analyticalDatasets[[ dataType ]] %>%          # Get dataset
+					dplyr::filter( !( row.names( self$analyticalDatasets[[ dataType ]] ) %in% naSamples ) ) # and filter samples which are NOT omitted samples
+				#print( self$analyticalDatasets[[ dataType ]] )
 
-				# 5. Show warning for omitted samples if required
-				cat( "=> DONE" )
-				if ( length( omittedSamples ) >= 1 ) {
-					cat( paste0( "\nWARNING: Following ", length( omittedSamples ), " samples in ", dataType, " were omitted as they contain NA values:\n" ) )
-					cat( paste0( "    * ", paste( omittedSamples, collapse = "\n    * " ), "\n" ) )
+				# 7. Show warning for NA samples if required
+				cat( "=> DONE\n" )
+				if ( length( naSamples ) >= 1 ) {
+					cat( paste0( "WARNING: Following ", length( naSamples ), " samples in ", dataType, " were omitted as they contain NA values:\n" ) )
+					cat( paste0( "    * ", paste( naSamples, collapse = "\n    * " ), "\n" ) )
 				} else {
-					cat( paste0( " (no omitted samples in ", dataType, " - good data!)\n" ) )
+					cat( paste0( " - No omitted samples in ", dataType, ", good data!\n" ) )
 				}
+
+				# 8. Show warning for NA samples if required
+				if ( length( dupSamples ) >= 1 ) {
+					cat( paste0( "WARNING: Following ", length( dupSamples ), " sample duplications in ", dataType, " were uniqued:\n" ) )
+					cat( paste0( "    * ", paste( dupSamples, collapse = "\n    * " ), "\n" ) )
+				} else {
+					cat( paste0( " - No duplicated samples in ", dataType, ", good data!\n" ) )
+				}
+
+				# 9. Foo bar...
 			}
 
 			# Purify meta datasets with sample column names
@@ -618,31 +644,56 @@ ModelBuilderInputDataManager <- R6::R6Class( "ModelBuilderInputDataManager",
 				# 0. Check if this data contains `sampleColumnName` column,
 				# NOTE : I decided to do it in `checkDatasets` member function, code was deleted
 
-				# 1. Set row names
+				# 1. Get duplicated samples (if found)
+				samples    <- ( self$metaDatasets[[ dataType ]] )[[ sampleColumnName ]]
+				dupSamples <- unique( samples[ duplicated( samples ) ] )
+
+				# 2. Remove duplicated samples (leave only 1st ones)
+				self$metaDatasets[[ dataType ]] <- self$metaDatasets[[ dataType ]][
+					!duplicated( ( self$metaDatasets[[ dataType ]] )[[ sampleColumnName ]] ), ]
+
+				# 3. Set row names
 				rowNames <- ( self$metaDatasets[[ dataType ]] )[[ sampleColumnName ]]
 				rownames( self$metaDatasets[[ dataType ]] ) <- rowNames
 
-				# 2. Remove sample names column
+				# 4. Remove sample names column
 				self$metaDatasets[[ dataType ]] <- self$metaDatasets[[ dataType ]] %>%
 					dplyr::select( -{{ sampleColumnName }} ) # Select columns except EXCEPT FOR {{ sampleColumnName }}
 
-				# 3. Find samples which contains NA values
-				omittedSamples <- rownames(
+				# 5. Find samples which contains NA values
+				naSamples <- rownames(
 					self$metaDatasets[[ dataType ]] %>%                                # Get dataset
 						dplyr::filter( dplyr::if_any( dplyr::everything(), is.na ) ) ) # and find rows which contain NAs at any columns
 
-				# 4. Remove omitted samples
-				self$metaDatasets[[ dataType ]] <- self$metaDatasets[[ dataType ]] %>%                     # Get dataset
-					dplyr::filter( !( row.names( self$metaDatasets[[ dataType ]] ) %in% omittedSamples ) ) # and filter samples which are NOT omitted samples
+				# 6. Remove NA samples
+				self$metaDatasets[[ dataType ]] <- self$metaDatasets[[ dataType ]] %>%                # Get dataset
+					dplyr::filter( !( row.names( self$metaDatasets[[ dataType ]] ) %in% naSamples ) ) # and filter samples which are NOT omitted samples
+				#print( self$metaDatasets[[ dataType ]] )
 
-				# 5. Show warning for omitted samples if required
-				cat( "=> DONE" )
-				if ( length( omittedSamples ) >= 1 ) {
-					cat( paste0( "\nWARNING: Following ", length( omittedSamples ), " samples in ", dataType, " were omitted as they contain NA values:\n" ) )
-					cat( paste0( "    * ", paste( omittedSamples, collapse = "\n    * " ), "\n" ) )
-				} else {
-					cat( paste0( " (no omitted samples in ", dataType, " - good data!)\n" ) )
+				# 7. Log 10 conversion (if required)
+				if ( modellingType == "regression" && convertLog10 == TRUE ) {
+					self$metaDatasets[[ dataType ]] <- log10( self$metaDatasets[[ dataType ]] )
+					cat( paste0( "\nINFO: ", dataType, " was log10 converted." ) )
 				}
+
+				# 7. Show warning for NA samples if required
+				cat( "\n=> DONE\n" )
+				if ( length( naSamples ) >= 1 ) {
+					cat( paste0( "WARNING: Following ", length( naSamples ), " samples in ", dataType, " were omitted as they contain NA values:\n" ) )
+					cat( paste0( "    * ", paste( naSamples, collapse = "\n    * " ), "\n" ) )
+				} else {
+					cat( paste0( " - No omitted samples in ", dataType, ", good data!\n" ) )
+				}
+
+				# 8. Show warning for NA samples if required
+				if ( length( dupSamples ) >= 1 ) {
+					cat( paste0( "WARNING: Following ", length( dupSamples ), " sample duplications in ", dataType, " were uniqued:\n" ) )
+					cat( paste0( "    * ", paste( dupSamples, collapse = "\n    * " ), "\n" ) )
+				} else {
+					cat( paste0( " - No duplicated samples in ", dataType, ", good data!\n" ) )
+				}
+
+				# 9. Foo bar ...
 			}
 			cat( "\n" )
 		},
