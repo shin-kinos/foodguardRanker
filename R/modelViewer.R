@@ -129,6 +129,68 @@ ModelViewerUtility <- R6::R6Class( "ModelViewerUtility",
 
 		#'
 		#' @description
+		#' Create analytical data IDs - sensor's colnames are combined
+		#' and changed into SHA 256. Thise IDs are used for automated
+		#' prediction.
+		#'
+		#' @importFrom digest digest
+		#'
+		#' @param inputSensorDf Object - input sensor as data frame.
+		#'
+		getSensorId = function( inputSensorDf ) {
+			#NOTE: Comments to check the content of colnames( inputSensorDf )
+			#message( "[TEST] paste( colnames( inputSensorDf ), collapse = \",\" ):" )
+			#message( paste( colnames( inputSensorDf ), collapse = "," ) )
+			return(
+				digest(
+					paste( colnames( inputSensorDf ), collapse = "," ),
+					algo = "sha256"
+				)
+			)
+		},
+
+		#'
+		#' @description
+		#' Check if the input data is in CSV format - if CSV, return TRUE, otherwise FALSE.
+		#'
+		#' @param inputSensor String - input sensor file path.
+		#'
+		checkIfCsv = function( inputSensor ) {
+			# Read data as lines
+			lines <- readLines( inputSensor, warn = FALSE )
+
+			# Get number of columns in each row by ','
+			nCols <- sapply( lines, function( line ) {
+				length( strsplit( line, "," )[[ 1 ]] )
+			}, USE.NAMES = FALSE )
+
+			# If nCols are unified, and not one column, return TRUE
+			if ( length( unique( nCols ) ) == 1 && nCols[ 1 ] > 1 ) return( TRUE )
+			else return( FALSE )
+		},
+
+		#'
+		#' @description
+		#' Check if the input data is in JSON format - if JSON, return TRUE, otherwise FALSE.
+		#'
+		#' @importFrom jsonlite fromJSON
+		#'
+		#' @param inputSensor String - input sensor file path.
+		#'
+		checkIfJson = function( inputSensor ) {
+			tryCatch(
+				{
+					jsonlite::fromJSON( readLines( inputSensor, warn = FALSE ) )
+					return( TRUE )
+				},
+				error = function( error ) {
+					return( FALSE )
+				}
+			)
+		},
+
+		#'
+		#' @description
 		#' BOOOOOOOOOM !!! !!! !!!
 		#'
 		#' @param errorContent String - detailed error message.
@@ -301,9 +363,152 @@ ModelViewerFunctionManager <- R6::R6Class( "ModelViewerFunctionManager",
 			)
 
 			return( rankingsResults )
+		},
+
+		#'
+		#' @description
+		#' Detect sensor name(s) by the input sensor ID - it reads 
+		#' 'databaseName/id/overview.json'.
+		#'
+		#' @importFrom jsonlite fromJSON
+		#'
+		#' @param databaseName String - a name of database which store models built by foodguardRanker::modelBuilder().
+		#' @param sensorId     String - an ID which store models built by foodguardRanker::modelBuilder().
+		#'
+		detectSensors = function( databaseName, sensorId ) {
+			# Check if dir `databaseName` exists. If FALSE, return error message.
+			if ( !dir.exists( databaseName ) ) {
+				#self$util$errorBomb( paste0( "Database '", databaseName, "' was not found." ) )
+				return(
+					list(
+						success = FALSE,
+						error   = paste0( "Database ", databaseName, " was not found." )
+					)
+				)
+			}
+
+			# Get all dirs in `databaseName`.
+			productDirs <- list.files( databaseName, full.names = TRUE )
+			productDirs <- productDirs[ file.info( productDirs )$isdir ]
+
+			# Check if each dir has `overview.json`
+			productDirs <- productDirs[ file.exists( paste0( productDirs, "/", "overview.json" ) ) ]
+
+			# Create vector of experiment overview JSON file paths.
+			overviewJsonFiles <- sapply( productDirs,
+				function( productDir ) paste0( productDir, "/", "overview.json" )
+			)
+
+			# Iterate JSON files to find matching sensorId
+			matchingProducts <- NULL
+			for ( overviewJson in overviewJsonFiles ) {
+				# Read JSON content
+				jsonContent <- jsonlite::fromJSON( overviewJson )
+				#message( paste0( "Checking product ID ", jsonContent$id, " ..." ) )
+				#str( jsonContent )
+
+				# Iterate analyticalDataIds
+				analyticalDataIds <- jsonContent$analyticalDataIds
+				for ( sensorName in names( analyticalDataIds ) ) {
+					# If input sensor ID matches, add product ID into the result
+					if ( analyticalDataIds[[ sensorName ]] == sensorId ) {
+						matchingProducts <- rbind( matchingProducts, data.frame( SensorName = sensorName, ID = jsonContent$id ) )
+					}
+				}
+			}
+
+			# If not product matched, return error message
+			if ( length( matchingProducts ) == 0 ) {
+				return(
+					list(
+						success = FALSE,
+						error   = "No matching products were found."
+					)
+				)
+			}
+
+			return(
+				list(
+					success = TRUE,
+					data    = matchingProducts
+				)
+			)
+		},
+
+		#'
+		#' @description
+		#' Search and find model(s) by sensor name, product name, ML name or/and Model ID
+		#'
+		#' @importFrom jsonlite fromJSON
+		#'
+		#' @param databaseName String - a name of database which store models built by foodguardRanker::modelBuilder().
+		#' @param sensorId     String - an ID which store models built by foodguardRanker::modelBuilder().
+		#' @param sensorName   String - a name of sensor data used for the prediction.
+		#' @param productName  String - a name of product.
+		#' @param mlName       String - a name of ML method.
+		#' @param modelId      String - a model ID.
+		#'
+		searchModels = function(
+			databaseName,
+			sensorName  = NULL,
+			productName = NULL,
+			mlName      = NULL,
+			modelId     = NULL
+		) {
+			# Check if dir `databaseName` exists. If FALSE, return error message.
+			if ( !dir.exists( databaseName ) ) {
+				#self$util$errorBomb( paste0( "Database '", databaseName, "' was not found." ) )
+				return(
+					list(
+						success = FALSE,
+						error   = paste0( "Database ", databaseName, " was not found." )
+					)
+				)
+			}
+
+			# Get all dirs in `databaseName`.
+			productDirs <- list.files( databaseName, full.names = TRUE )
+			productDirs <- productDirs[ file.info( productDirs )$isdir ]
+
+			# Check if each dir has `overview.json`
+			productDirs <- productDirs[ file.exists( paste0( productDirs, "/", "overview.json" ) ) ]
+
+			# Create vector of experiment overview JSON file paths.
+			overviewJsonFiles <- sapply( productDirs,
+				function( productDir ) paste0( productDir, "/", "overview.json" )
+			)
+			#print( overviewJsonFiles )
+
+			# Step 1: If searching by model ID, directly find the product ID
+			if ( !is.null( modelId ) ) {
+				# Iterate JSON files to find matching model ID
+				for ( overviewJson in overviewJsonFiles ) {
+					# Read JSON content
+					jsonContent <- jsonlite::fromJSON( overviewJson )
+					# If models ID matches, return the product ID
+					if ( modelId == jsonContent$id ) {
+						return ( list(
+							success = TRUE,
+							data    = list( ID = jsonContent$id )
+						) )
+					}
+				}
+			}
+
+			# Step 2: Iterate JSON files to find matching sensorId
+			matchingProducts <- NULL
+			for ( overviewJson in overviewJsonFiles ) {
+				# TODO : Implement this function
+				# TODO : Implement this function
+				# TODO : Implement this function
+			}
+
+			return( NULL )
 		}
 	)
 )
+
+# ANCHOR : ModelViewerFunctionManager ends here.
 
 #'
 #' @title Show overviews of available experiments and their models.
@@ -399,4 +604,150 @@ mlRankingsViewer <- function( databaseName, id, type = "list" ) {
 	if( tolower( type ) == "json" ) rankingsResults <- jsonlite::toJSON( rankingsResults, auto_unbox = TRUE )
 
 	return( rankingsResults )
+}
+
+#'
+#' @title Detect types of input analytical datasets' name
+#'
+#' @description
+#' Detect types of input analytical datasets' name. Carry on grid-searching into the
+#' database and find the name(s) the analytical data by SHA256.
+#'
+#' @details
+#' This product was funded by the European Union project FoodGuard, grant number 101136542
+#'
+#' @importFrom jsonlite toJSON
+#'
+#' @param databaseName String - a name of database which store models built by foodguardRanker::modelBuilder().
+#' @param sensorName   String - a name of sensor data used for the prediction.
+#' @param sensorFile   String - a file path of sensor data used for the prediction.
+#' @param productName  String - a name of product.
+#' @param type         String - data type of result experiment overviews. "list" or "json", default "list".
+#'
+#' @export
+#'
+sensorDetector <- function(
+	databaseName, # Database name
+	inputSensor,  # Input sensor file name
+	type = "list" # Output data type
+	) {
+	# Activate ModelViewerUtility class
+	# REVIEW: Needy ??? <- YES !!!
+	util <- ModelViewerUtility$new()
+
+	# Activate ModelViewerUtility class
+	modelViewerFunctionManager <- ModelViewerFunctionManager$new()
+
+	# Open `inputSensor` as data.frame, if file does
+	# not exist, return error message
+	message( "Reading input sensor ..." )
+	if ( !file.exists( inputSensor ) ) {
+		errorResult <- list(
+			success = FALSE,
+			error   = paste0( "Sensor data ", inputSensor, " was not found." )
+		)
+		if ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
+		else return( errorResult )
+	}
+	message( "=> DONE" )
+
+	# Check if the input file is CSV or JSON
+	message( "Checking input data format ..." )
+	isCsv  <- util$checkIfCsv(  inputSensor ); message( paste0( "    * Is it  CSV?: ", isCsv  ) )
+	isJson <- util$checkIfJson( inputSensor ); message( paste0( "    * Is it JSON?: ", isJson ) )
+	inputSensorDf <- NULL
+	if      ( isCsv == TRUE  && isJson == FALSE ) { inputSensorDf <- read.csv( inputSensor ) }
+	else if ( isCsv == FALSE && isJson == TRUE  ) { inputSensorDf <- jsonlite::fromJSON( readLines( inputSensor, warn = FALSE ) ) }
+	else if ( isCsv == FALSE && isJson == FALSE ) {
+		# If `isCsv == FALSE && isJson == FALSE`, return error message
+		errorResult <- list( success = FALSE, error = "Invalid format of input data." )
+		if      ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
+		else if ( tolower( type ) == "list" ) return( errorResult )
+		else                                  return( errorResult )
+	}
+	message( "=> DONE" )
+
+	# Get hash of input analytical data
+	message( "Generating input sensor ID ..." )
+	inputSensorId <- util$getSensorId( inputSensorDf )
+	message( paste0( "=> DONE (", inputSensorId, ")" ) )
+
+	# Finding products which have the same analytical data ID
+	message( "Detecting product(s) ..." )
+	detectedSensors <- modelViewerFunctionManager$detectSensors(
+		databaseName = databaseName,
+		sensorId     = inputSensorId
+	)
+	message( "=> DONE" )
+	#print( detectedSensors )
+
+	# If type == "json", convert into JSON
+	if( tolower( type ) == "json" ) detectedSensors <- jsonlite::toJSON( detectedSensors, auto_unbox = TRUE )
+
+	return( detectedSensors )
+}
+
+#'
+#' @title Search models by sensor name, product name and ML method name.
+#'
+#' @description
+#' Search models by sensor name, product name and ML method name.
+#'
+#' @details
+#' This product was funded by the European Union project FoodGuard, grant number 101136542
+#'
+#' @importFrom jsonlite toJSON
+#'
+#' @param databaseName String - a name of database which store models built by foodguardRanker::modelBuilder().
+#' @param sensorName   String - a name of sensor data used for the prediction.
+#' @param productName  String - a name of product.
+#' @param mlName       String - a name of ML method.
+#' @param modelId      String - a model ID.
+#' @param type         String - data type of result experiment overviews. "list" or "json", default "list".
+#'
+#' @export
+#'
+modelFinder <- function(
+	databaseName,
+	sensorName  = NULL,
+	productName = NULL,
+	mlName      = NULL,
+	modelId     = NULL,
+	type        = "list"
+) {
+	# Activate ModelViewerUtility class
+	# REVIEW: Needy ??? <- YES !!!
+	util <- ModelViewerUtility$new()
+
+	# Activate ModelViewerUtility class
+	modelViewerFunctionManager <- ModelViewerFunctionManager$new()
+
+	# Open `databaseName` as data.frame, if file does
+	# not exist, return error message
+	message( "Reading database ..." )
+	if ( !dir.exists( databaseName ) ) {
+		errorResult <- list(
+			success = FALSE,
+			error   = paste0( "Database ", databaseName, " was not found." )
+		)
+		if ( tolower( type ) == "json" ) return( jsonlite::toJSON( errorResult, auto_unbox = TRUE ) )
+		else return( errorResult )
+	}
+	message( "=> DONE" )
+
+	# Call searchModels from ModelViewerFunctionManager class
+	message( "Searching models ..." )
+	searchModelsResults <- modelViewerFunctionManager$searchModels(
+		databaseName = databaseName,
+		sensorName   = sensorName,
+		productName  = productName,
+		mlName       = mlName,
+		modelId      = modelId
+	)
+	message( "=> DONE" )
+
+	# If type == "json", convert into JSON
+	if( tolower( type ) == "json" ) searchModelsResults <- jsonlite::toJSON( searchModelsResults, auto_unbox = TRUE )
+
+	return( searchModelsResults )
 }

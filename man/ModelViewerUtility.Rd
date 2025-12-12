@@ -15,6 +15,9 @@ R6 class as utility of Model viewer which is available for all the class, member
 \item \href{#method-ModelViewerUtility-getOverviewTable}{\code{ModelViewerUtility$getOverviewTable()}}
 \item \href{#method-ModelViewerUtility-getProductDetailsTable}{\code{ModelViewerUtility$getProductDetailsTable()}}
 \item \href{#method-ModelViewerUtility-getMLmethodRankingsTable}{\code{ModelViewerUtility$getMLmethodRankingsTable()}}
+\item \href{#method-ModelViewerUtility-getSensorId}{\code{ModelViewerUtility$getSensorId()}}
+\item \href{#method-ModelViewerUtility-checkIfCsv}{\code{ModelViewerUtility$checkIfCsv()}}
+\item \href{#method-ModelViewerUtility-checkIfJson}{\code{ModelViewerUtility$checkIfJson()}}
 \item \href{#method-ModelViewerUtility-errorBomb}{\code{ModelViewerUtility$errorBomb()}}
 \item \href{#method-ModelViewerUtility-clone}{\code{ModelViewerUtility$clone()}}
 }
@@ -76,6 +79,59 @@ Get ML rankings of one experiment in table format.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{rankingsFilePath}}{String - MODELS dir path (database/ID/rankings.csv).}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ModelViewerUtility-getSensorId"></a>}}
+\if{latex}{\out{\hypertarget{method-ModelViewerUtility-getSensorId}{}}}
+\subsection{Method \code{getSensorId()}}{
+Create analytical data IDs - sensor's colnames are combined
+and changed into SHA 256. Thise IDs are used for automated
+prediction.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ModelViewerUtility$getSensorId(inputSensorDf)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{inputSensorDf}}{Object - input sensor as data frame.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ModelViewerUtility-checkIfCsv"></a>}}
+\if{latex}{\out{\hypertarget{method-ModelViewerUtility-checkIfCsv}{}}}
+\subsection{Method \code{checkIfCsv()}}{
+Check if the input data is in CSV format - if CSV, return TRUE, otherwise FALSE.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ModelViewerUtility$checkIfCsv(inputSensor)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{inputSensor}}{String - input sensor file path.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ModelViewerUtility-checkIfJson"></a>}}
+\if{latex}{\out{\hypertarget{method-ModelViewerUtility-checkIfJson}{}}}
+\subsection{Method \code{checkIfJson()}}{
+Check if the input data is in JSON format - if JSON, return TRUE, otherwise FALSE.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ModelViewerUtility$checkIfJson(inputSensor)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{inputSensor}}{String - input sensor file path.}
 }
 \if{html}{\out{</div>}}
 }

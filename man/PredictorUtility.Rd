@@ -13,6 +13,8 @@ R6 class as utility of Predictor which is available for all the class, members a
 \itemize{
 \item \href{#method-PredictorUtility-new}{\code{PredictorUtility$new()}}
 \item \href{#method-PredictorUtility-getSensorId}{\code{PredictorUtility$getSensorId()}}
+\item \href{#method-PredictorUtility-checkIfCsv}{\code{PredictorUtility$checkIfCsv()}}
+\item \href{#method-PredictorUtility-checkIfJson}{\code{PredictorUtility$checkIfJson()}}
 \item \href{#method-PredictorUtility-errorBomb}{\code{PredictorUtility$errorBomb()}}
 \item \href{#method-PredictorUtility-clone}{\code{PredictorUtility$clone()}}
 }
@@ -42,6 +44,40 @@ prediction.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{inputSensorDf}}{Object - input sensor as data frame.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-PredictorUtility-checkIfCsv"></a>}}
+\if{latex}{\out{\hypertarget{method-PredictorUtility-checkIfCsv}{}}}
+\subsection{Method \code{checkIfCsv()}}{
+Check if the input data is in CSV format - if CSV, return TRUE, otherwise FALSE.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{PredictorUtility$checkIfCsv(inputSensor)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{inputSensor}}{String - input sensor file path.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-PredictorUtility-checkIfJson"></a>}}
+\if{latex}{\out{\hypertarget{method-PredictorUtility-checkIfJson}{}}}
+\subsection{Method \code{checkIfJson()}}{
+Check if the input data is in JSON format - if JSON, return TRUE, otherwise FALSE.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{PredictorUtility$checkIfJson(inputSensor)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{inputSensor}}{String - input sensor file path.}
 }
 \if{html}{\out{</div>}}
 }

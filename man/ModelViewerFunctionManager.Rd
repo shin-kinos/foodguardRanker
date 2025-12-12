@@ -22,6 +22,7 @@ R6 class which contains all the available functions for model viewer.
 \item \href{#method-ModelViewerFunctionManager-getProductsOverview}{\code{ModelViewerFunctionManager$getProductsOverview()}}
 \item \href{#method-ModelViewerFunctionManager-getProductDetails}{\code{ModelViewerFunctionManager$getProductDetails()}}
 \item \href{#method-ModelViewerFunctionManager-getMLmethodRankings}{\code{ModelViewerFunctionManager$getMLmethodRankings()}}
+\item \href{#method-ModelViewerFunctionManager-detectSensors}{\code{ModelViewerFunctionManager$detectSensors()}}
 \item \href{#method-ModelViewerFunctionManager-clone}{\code{ModelViewerFunctionManager$clone()}}
 }
 }
@@ -93,6 +94,26 @@ Get ML rankings of specific product - it reads and shows the content of
 \item{\code{databaseName}}{String - a name of database which store models built by foodguardRanker::modelBuilder().}
 
 \item{\code{id}}{String - an ID which store models built by foodguardRanker::modelBuilder().}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ModelViewerFunctionManager-detectSensors"></a>}}
+\if{latex}{\out{\hypertarget{method-ModelViewerFunctionManager-detectSensors}{}}}
+\subsection{Method \code{detectSensors()}}{
+Detect sensor name(s) by the input sensor ID - it reads
+'databaseName/id/overview.json'.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ModelViewerFunctionManager$detectSensors(databaseName, sensorId)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{databaseName}}{String - a name of database which store models built by foodguardRanker::modelBuilder().}
+
+\item{\code{sensorId}}{String - an ID which store models built by foodguardRanker::modelBuilder().}
 }
 \if{html}{\out{</div>}}
 }
