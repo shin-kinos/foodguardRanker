@@ -103,6 +103,37 @@ function( id ) {
 	return( rankingsResults )
 }
 
+#* @post /detectsensor
+#*
+#* @param id String - an ID which store models built by foodguardRanker::modelBuilder().
+# [e.g.] % curl -X POST -F "file=@myEnoseData.csv" "http://127.0.0.1:8008/detectsensor"
+function(
+	req
+) {
+	# REVIEW : Some sources say "req$files$file$datapath is enougth".
+	# REVIEW : But I still do not believe in it!
+	uploadedTempFile     <- mime::parse_multipart( req )
+	uploadedTempFilePath <- uploadedTempFile$file$datapath
+	message( paste0( "Uploaded temp file path: ", uploadedTempFilePath ) )
+
+	detectSensorResults <- foodguardRanker::sensorDetector(
+		databaseName = dbPath,               # Database name
+		inputSensor  = uploadedTempFilePath, # Input sensor
+		type         = "list"                # Output type
+	)
+
+	# Unbox success property
+	detectSensorResults$success <- unbox( detectSensorResults$success )
+
+	# Delete the uploaded temp file
+	if ( file.exists( uploadedTempFilePath ) == TRUE ) {
+		file.remove( uploadedTempFilePath )
+		message( paste0( "Temp file ", uploadedTempFilePath, " was deleted." ) )
+	}
+
+	return( detectSensorResults )
+}
+
 #* @post /predict
 #*
 #* @param id             String - an ID which store models built by foodguardRanker::modelBuilder().

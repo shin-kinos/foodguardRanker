@@ -2,5 +2,5 @@
 	"Title"  : "This is FoodguardRanker Daemon config.",
 	"Host"   : "127.0.0.1",
 	"Port"   : "8008",
-	"DbPath" : "/Users/shintarokinoshita/Desktop/FETA_Preprocessed_Data/BRINE-B1-Class/database"
+	"DbPath" : "/Users/shintarokinoshita/Desktop/foodguardRanker-devSandbox/database"
 }
