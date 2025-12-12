@@ -9,6 +9,7 @@ modelFinder(
   sensorName = NULL,
   productName = NULL,
   mlName = NULL,
+  modelId = NULL,
   type = "list"
 )
 }
@@ -20,6 +21,8 @@ modelFinder(
 \item{productName}{String - a name of product.}
 
 \item{mlName}{String - a name of ML method.}
+
+\item{modelId}{String - a model ID.}
 
 \item{type}{String - data type of result experiment overviews. "list" or "json", default "list".}
 }

@@ -23,6 +23,7 @@ R6 class which contains all the available functions for model viewer.
 \item \href{#method-ModelViewerFunctionManager-getProductDetails}{\code{ModelViewerFunctionManager$getProductDetails()}}
 \item \href{#method-ModelViewerFunctionManager-getMLmethodRankings}{\code{ModelViewerFunctionManager$getMLmethodRankings()}}
 \item \href{#method-ModelViewerFunctionManager-detectSensors}{\code{ModelViewerFunctionManager$detectSensors()}}
+\item \href{#method-ModelViewerFunctionManager-searchModels}{\code{ModelViewerFunctionManager$searchModels()}}
 \item \href{#method-ModelViewerFunctionManager-clone}{\code{ModelViewerFunctionManager$clone()}}
 }
 }
@@ -112,6 +113,39 @@ Detect sensor name(s) by the input sensor ID - it reads
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{databaseName}}{String - a name of database which store models built by foodguardRanker::modelBuilder().}
+
+\item{\code{sensorId}}{String - an ID which store models built by foodguardRanker::modelBuilder().}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ModelViewerFunctionManager-searchModels"></a>}}
+\if{latex}{\out{\hypertarget{method-ModelViewerFunctionManager-searchModels}{}}}
+\subsection{Method \code{searchModels()}}{
+Search and find model(s) by sensor name, product name, ML name or/and Model ID
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ModelViewerFunctionManager$searchModels(
+  databaseName,
+  sensorName = NULL,
+  productName = NULL,
+  mlName = NULL,
+  modelId = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{databaseName}}{String - a name of database which store models built by foodguardRanker::modelBuilder().}
+
+\item{\code{sensorName}}{String - a name of sensor data used for the prediction.}
+
+\item{\code{productName}}{String - a name of product.}
+
+\item{\code{mlName}}{String - a name of ML method.}
+
+\item{\code{modelId}}{String - a model ID.}
 
 \item{\code{sensorId}}{String - an ID which store models built by foodguardRanker::modelBuilder().}
 }
